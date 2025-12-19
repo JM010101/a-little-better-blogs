@@ -44,7 +44,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       }
     }
 
-    if (tag && postIds !== []) {
+    if (tag && (postIds === null || postIds.length > 0)) {
       const { data: tagData } = await supabase
         .from('blog_tags')
         .select('id')
