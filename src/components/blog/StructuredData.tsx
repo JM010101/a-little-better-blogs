@@ -10,7 +10,6 @@ export function StructuredData({ post }: StructuredDataProps) {
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt || post.content.substring(0, 200),
-    image: post.featured_image || undefined,
     datePublished: post.published_at || post.created_at,
     dateModified: post.updated_at,
     author: {
