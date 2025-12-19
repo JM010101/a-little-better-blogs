@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase'
-import { calculateReadingTime } from '@/lib/utils'
+import { calculateReadingTime, slugify } from '@/lib/utils'
 
 export async function GET(
   request: NextRequest,
