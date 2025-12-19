@@ -131,7 +131,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
     
     if (posts && posts.length > 0) {
       // Fetch author data
-      const authorIds = [...new Set(posts.map(p => p.author_id))]
+      const authorIds = Array.from(new Set(posts.map(p => p.author_id)))
       const { data: authors } = await supabase
         .from('blog_authors')
         .select('*')
