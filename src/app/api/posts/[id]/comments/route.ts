@@ -3,9 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -15,7 +16,7 @@ export async function GET(
         *,
         author:blog_authors(*)
       `)
-      .eq('post_id', params.id)
+      .eq('post_id', id)
       .eq('approved', true)
       .is('parent_id', null)
       .order('created_at', { ascending: true })
@@ -61,9 +62,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -86,7 +88,7 @@ export async function POST(
     }
 
     const commentData: any = {
-      post_id: params.id,
+      post_id: id,
       content,
       parent_id: parent_id || null,
       approved: user ? true : false, // Auto-approve authenticated comments

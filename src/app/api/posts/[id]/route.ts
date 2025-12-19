@@ -4,9 +4,10 @@ import { calculateReadingTime } from '@/lib/utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -18,7 +19,7 @@ export async function GET(
         categories:blog_post_categories(blog_categories(*)),
         tags:blog_post_tags(blog_tags(*))
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) throw error
@@ -35,13 +36,13 @@ export async function GET(
     await supabase
       .from('blog_posts')
       .update({ views: post.views + 1 })
-      .eq('id', params.id)
+      .eq('id', id)
 
     // Get ratings
     const { data: ratings } = await supabase
       .from('blog_ratings')
       .select('rating, user_id')
-      .eq('post_id', params.id)
+      .eq('post_id', id)
 
     if (ratings && ratings.length > 0) {
       const sum = ratings.reduce((acc, r) => acc + r.rating, 0)
@@ -65,9 +66,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -82,7 +84,7 @@ export async function PUT(
     const { data: existingPost } = await supabase
       .from('blog_posts')
       .select('author_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!existingPost || existingPost.author_id !== user.id) {
@@ -116,7 +118,7 @@ export async function PUT(
     const { data: post, error } = await supabase
       .from('blog_posts')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -127,7 +129,7 @@ export async function PUT(
       await supabase
         .from('blog_post_categories')
         .delete()
-        .eq('post_id', params.id)
+        .eq('post_id', id)
 
       if (categories.length > 0) {
         const categoryIds = await Promise.all(
@@ -156,7 +158,7 @@ export async function PUT(
           .from('blog_post_categories')
           .insert(
             categoryIds.filter(Boolean).map(catId => ({
-              post_id: params.id,
+              post_id: id,
               category_id: catId
             }))
           )
@@ -168,7 +170,7 @@ export async function PUT(
       await supabase
         .from('blog_post_tags')
         .delete()
-        .eq('post_id', params.id)
+        .eq('post_id', id)
 
       if (tags.length > 0) {
         const tagIds = await Promise.all(
@@ -197,7 +199,7 @@ export async function PUT(
           .from('blog_post_tags')
           .insert(
             tagIds.filter(Boolean).map(tagId => ({
-              post_id: params.id,
+              post_id: id,
               tag_id: tagId
             }))
           )
@@ -215,9 +217,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -232,7 +235,7 @@ export async function DELETE(
     const { data: existingPost } = await supabase
       .from('blog_posts')
       .select('author_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!existingPost || existingPost.author_id !== user.id) {
@@ -245,7 +248,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('blog_posts')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) throw error
 

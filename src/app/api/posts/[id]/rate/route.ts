@@ -3,9 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -30,7 +31,7 @@ export async function POST(
     const { data: existingRating } = await supabase
       .from('blog_ratings')
       .select('id')
-      .eq('post_id', params.id)
+      .eq('post_id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -50,7 +51,7 @@ export async function POST(
       const { data: newRating, error } = await supabase
         .from('blog_ratings')
         .insert({
-          post_id: params.id,
+          post_id: id,
           user_id: user.id,
           rating,
         })
