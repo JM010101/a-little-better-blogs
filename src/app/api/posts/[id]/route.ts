@@ -83,7 +83,7 @@ export async function PUT(
     // Check if user owns the post
     const { data: existingPost } = await supabase
       .from('blog_posts')
-      .select('author_id')
+      .select('author_id, published_at')
       .eq('id', id)
       .single()
 
