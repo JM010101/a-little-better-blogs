@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { AuthButton } from '@/components/AuthButton'
 import './globals.css'
 
 const inter = Inter({ 
@@ -61,6 +62,7 @@ export default function RootLayout({
                   <Link href="/create" className="btn-primary">
                     Write Post
                   </Link>
+                  <AuthButton />
                 </div>
               </div>
             </nav>
