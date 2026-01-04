@@ -10,7 +10,7 @@ export async function GET(
     const supabase = await createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const { data: comments, error } = await supabase
+    const { data: comments, error: commentsError } = await supabase
       .from('blog_comments')
       .select(`
         *,
@@ -21,12 +21,14 @@ export async function GET(
       .is('parent_id', null)
       .order('created_at', { ascending: true })
 
-    if (error) throw error
+    if (commentsError) {
+      throw new Error(`Failed to fetch comments: ${commentsError.message}`)
+    }
 
     // Get replies for each comment
     const commentIds = comments?.map(c => c.id) || []
     if (commentIds.length > 0) {
-      const { data: replies } = await supabase
+      const { data: replies, error: repliesError } = await supabase
         .from('blog_comments')
         .select(`
           *,
@@ -35,6 +37,10 @@ export async function GET(
         .in('parent_id', commentIds)
         .eq('approved', true)
         .order('created_at', { ascending: true })
+
+      if (repliesError) {
+        throw new Error(`Failed to fetch replies: ${repliesError.message}`)
+      }
 
       // Organize replies by parent
       const repliesMap = new Map()
@@ -101,7 +107,7 @@ export async function POST(
       commentData.author_email = author_email
     }
 
-    const { data: comment, error } = await supabase
+    const { data: comment, error: insertError } = await supabase
       .from('blog_comments')
       .insert(commentData)
       .select(`
@@ -110,7 +116,9 @@ export async function POST(
       `)
       .single()
 
-    if (error) throw error
+    if (insertError) {
+      throw new Error(`Failed to create comment: ${insertError.message}`)
+    }
 
     return NextResponse.json({ comment }, { status: 201 })
   } catch (error: any) {

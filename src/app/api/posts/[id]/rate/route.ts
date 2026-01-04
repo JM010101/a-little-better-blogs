@@ -28,27 +28,33 @@ export async function POST(
     }
 
     // Check if rating already exists
-    const { data: existingRating } = await supabase
+    const { data: existingRating, error: checkError } = await supabase
       .from('blog_ratings')
       .select('id')
       .eq('post_id', id)
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (checkError) {
+      throw new Error(`Failed to check existing rating: ${checkError.message}`)
+    }
 
     if (existingRating) {
       // Update existing rating
-      const { data: updatedRating, error } = await supabase
+      const { data: updatedRating, error: updateError } = await supabase
         .from('blog_ratings')
         .update({ rating, updated_at: new Date().toISOString() })
         .eq('id', existingRating.id)
         .select()
         .single()
 
-      if (error) throw error
+      if (updateError) {
+        throw new Error(`Failed to update rating: ${updateError.message}`)
+      }
       return NextResponse.json({ rating: updatedRating })
     } else {
       // Create new rating
-      const { data: newRating, error } = await supabase
+      const { data: newRating, error: insertError } = await supabase
         .from('blog_ratings')
         .insert({
           post_id: id,
@@ -58,7 +64,9 @@ export async function POST(
         .select()
         .single()
 
-      if (error) throw error
+      if (insertError) {
+        throw new Error(`Failed to create rating: ${insertError.message}`)
+      }
       return NextResponse.json({ rating: newRating }, { status: 201 })
     }
   } catch (error: any) {

@@ -2,6 +2,9 @@ import { createServerSupabaseClient } from '@/lib/supabase'
 import { PostCard } from '@/components/blog/PostCard'
 import Link from 'next/link'
 
+// Enable ISR - revalidate every 30 minutes
+export const revalidate = 1800
+
 interface PostsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }

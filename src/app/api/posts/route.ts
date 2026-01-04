@@ -16,6 +16,75 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = (page - 1) * limit
 
+    // Start with filtering post IDs if category or tag filters are applied
+    let postIds: string[] | null = null
+
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from('blog_categories')
+        .select('id')
+        .eq('slug', category)
+        .maybeSingle()
+      
+      if (categoryData) {
+        const { data: postCategories } = await supabase
+          .from('blog_post_categories')
+          .select('post_id')
+          .eq('category_id', categoryData.id)
+        
+        if (postCategories && postCategories.length > 0) {
+          postIds = postCategories.map(pc => pc.post_id)
+        } else {
+          postIds = [] // Empty array means no results
+        }
+      } else {
+        postIds = [] // Category doesn't exist
+      }
+    }
+
+    if (tag && (postIds === null || postIds.length > 0)) {
+      const { data: tagData } = await supabase
+        .from('blog_tags')
+        .select('id')
+        .eq('slug', tag)
+        .maybeSingle()
+      
+      if (tagData) {
+        const { data: postTags } = await supabase
+          .from('blog_post_tags')
+          .select('post_id')
+          .eq('tag_id', tagData.id)
+        
+        if (postTags && postTags.length > 0) {
+          const tagPostIds = postTags.map(pt => pt.post_id)
+          if (postIds) {
+            // Intersect the arrays
+            postIds = postIds.filter(id => tagPostIds.includes(id))
+          } else {
+            postIds = tagPostIds
+          }
+        } else {
+          postIds = [] // Empty array means no results
+        }
+      } else {
+        postIds = [] // Tag doesn't exist
+      }
+    }
+
+    // Return early if no posts match filters
+    if (postIds !== null && postIds.length === 0) {
+      return NextResponse.json({
+        posts: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      })
+    }
+
+    // Build the main query
     let query = supabase
       .from('blog_posts')
       .select(`
@@ -25,15 +94,10 @@ export async function GET(request: NextRequest) {
         tags:blog_post_tags(blog_tags(*))
       `, { count: 'exact' })
       .eq('published', true)
-      .order('published_at', { ascending: false })
-      .range(offset, offset + limit - 1)
 
-    if (category) {
-      query = query.contains('categories', [{ slug: category }])
-    }
-
-    if (tag) {
-      query = query.contains('tags', [{ slug: tag }])
+    // Apply post ID filter if we have filtered IDs
+    if (postIds !== null && postIds.length > 0) {
+      query = query.in('id', postIds)
     }
 
     if (author) {
@@ -48,7 +112,10 @@ export async function GET(request: NextRequest) {
       query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,excerpt.ilike.%${search}%`)
     }
 
+    // Apply ordering and pagination
     const { data, error, count } = await query
+      .order('published_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 
@@ -120,16 +187,18 @@ export async function POST(request: NextRequest) {
     const slug = slugify(title)
     const readingTime = calculateReadingTime(content)
 
-    // Check if slug exists
+    // Check if slug exists and generate unique slug if needed
     const { data: existingPost } = await supabase
       .from('blog_posts')
       .select('id')
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
 
     let finalSlug = slug
     if (existingPost) {
-      finalSlug = `${slug}-${Date.now()}`
+      // Use UUID-based suffix for better uniqueness under concurrency
+      const uuid = crypto.randomUUID().split('-')[0]
+      finalSlug = `${slug}-${uuid}`
     }
 
     const postData: any = {
@@ -158,18 +227,26 @@ export async function POST(request: NextRequest) {
         categories.map(async (catName: string) => {
           const catSlug = slugify(catName)
           // Check if category exists
-          let { data: category } = await supabase
+          let { data: category, error: categoryError } = await supabase
             .from('blog_categories')
             .select('id')
             .eq('slug', catSlug)
-            .single()
+            .maybeSingle()
+
+          if (categoryError) {
+            throw new Error(`Failed to fetch category: ${categoryError.message}`)
+          }
 
           if (!category) {
-            const { data: newCategory } = await supabase
+            const { data: newCategory, error: insertError } = await supabase
               .from('blog_categories')
               .insert({ name: catName, slug: catSlug })
               .select()
               .single()
+            
+            if (insertError) {
+              throw new Error(`Failed to create category: ${insertError.message}`)
+            }
             category = newCategory
           }
 
@@ -177,7 +254,7 @@ export async function POST(request: NextRequest) {
         })
       )
 
-      await supabase
+      const { error: insertCategoriesError } = await supabase
         .from('blog_post_categories')
         .insert(
           categoryIds.filter(Boolean).map(catId => ({
@@ -185,6 +262,10 @@ export async function POST(request: NextRequest) {
             category_id: catId
           }))
         )
+
+      if (insertCategoriesError) {
+        throw new Error(`Failed to insert categories: ${insertCategoriesError.message}`)
+      }
     }
 
     // Handle tags
@@ -193,18 +274,26 @@ export async function POST(request: NextRequest) {
         tags.map(async (tagName: string) => {
           const tagSlug = slugify(tagName)
           // Check if tag exists
-          let { data: tag } = await supabase
+          let { data: tag, error: tagError } = await supabase
             .from('blog_tags')
             .select('id')
             .eq('slug', tagSlug)
-            .single()
+            .maybeSingle()
+
+          if (tagError) {
+            throw new Error(`Failed to fetch tag: ${tagError.message}`)
+          }
 
           if (!tag) {
-            const { data: newTag } = await supabase
+            const { data: newTag, error: insertError } = await supabase
               .from('blog_tags')
               .insert({ name: tagName, slug: tagSlug })
               .select()
               .single()
+            
+            if (insertError) {
+              throw new Error(`Failed to create tag: ${insertError.message}`)
+            }
             tag = newTag
           }
 
@@ -212,7 +301,7 @@ export async function POST(request: NextRequest) {
         })
       )
 
-      await supabase
+      const { error: insertTagsError } = await supabase
         .from('blog_post_tags')
         .insert(
           tagIds.filter(Boolean).map(tagId => ({
@@ -220,6 +309,10 @@ export async function POST(request: NextRequest) {
             tag_id: tagId
           }))
         )
+
+      if (insertTagsError) {
+        throw new Error(`Failed to insert tags: ${insertTagsError.message}`)
+      }
     }
 
     return NextResponse.json({ post }, { status: 201 })

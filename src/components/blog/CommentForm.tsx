@@ -16,13 +16,13 @@ export function CommentForm({ postId, parentId, onSuccess }: CommentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  useState(() => {
+  useEffect(() => {
     // Check if user is authenticated
     fetch('/api/auth/check')
       .then(res => res.json())
       .then(data => setIsAuthenticated(data.authenticated))
       .catch(() => setIsAuthenticated(false))
-  })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

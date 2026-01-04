@@ -16,18 +16,11 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
     notFound()
   }
 
-  const { data: tagData } = await supabase
-    .from('blog_tags')
-    .select('id')
-    .eq('slug', slug)
-    .single()
-
   let posts: any[] = []
-  if (tagData) {
-    const { data: postTags } = await supabase
-      .from('blog_post_tags')
-      .select('post_id')
-      .eq('tag_id', tagData.id)
+  const { data: postTags } = await supabase
+    .from('blog_post_tags')
+    .select('post_id')
+    .eq('tag_id', tag.id)
 
     if (postTags && postTags.length > 0) {
       const postIds = postTags.map(pt => pt.post_id)

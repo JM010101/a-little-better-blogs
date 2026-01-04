@@ -32,11 +32,8 @@ export async function GET(
       )
     }
 
-    // Increment views
-    await supabase
-      .from('blog_posts')
-      .update({ views: post.views + 1 })
-      .eq('id', id)
+    // Increment views atomically using RPC function
+    await supabase.rpc('increment_post_views', { post_id: id })
 
     // Get ratings
     const { data: ratings } = await supabase
@@ -125,28 +122,41 @@ export async function PUT(
     if (error) throw error
 
     // Update categories if provided
-    if (categories) {
-      await supabase
+    if (categories !== undefined) {
+      // Delete existing categories
+      const { error: deleteCategoriesError } = await supabase
         .from('blog_post_categories')
         .delete()
         .eq('post_id', id)
+
+      if (deleteCategoriesError) {
+        throw new Error(`Failed to delete categories: ${deleteCategoriesError.message}`)
+      }
 
       if (categories.length > 0) {
         const categoryIds = await Promise.all(
           categories.map(async (catName: string) => {
             const catSlug = slugify(catName)
-            let { data: category } = await supabase
+            let { data: category, error: categoryError } = await supabase
               .from('blog_categories')
               .select('id')
               .eq('slug', catSlug)
-              .single()
+              .maybeSingle()
+
+            if (categoryError) {
+              throw new Error(`Failed to fetch category: ${categoryError.message}`)
+            }
 
             if (!category) {
-              const { data: newCategory } = await supabase
+              const { data: newCategory, error: insertError } = await supabase
                 .from('blog_categories')
                 .insert({ name: catName, slug: catSlug })
                 .select()
                 .single()
+              
+              if (insertError) {
+                throw new Error(`Failed to create category: ${insertError.message}`)
+              }
               category = newCategory
             }
 
@@ -154,7 +164,7 @@ export async function PUT(
           })
         )
 
-        await supabase
+        const { error: insertCategoriesError } = await supabase
           .from('blog_post_categories')
           .insert(
             categoryIds.filter(Boolean).map(catId => ({
@@ -162,32 +172,49 @@ export async function PUT(
               category_id: catId
             }))
           )
+
+        if (insertCategoriesError) {
+          throw new Error(`Failed to insert categories: ${insertCategoriesError.message}`)
+        }
       }
     }
 
     // Update tags if provided
-    if (tags) {
-      await supabase
+    if (tags !== undefined) {
+      // Delete existing tags
+      const { error: deleteTagsError } = await supabase
         .from('blog_post_tags')
         .delete()
         .eq('post_id', id)
+
+      if (deleteTagsError) {
+        throw new Error(`Failed to delete tags: ${deleteTagsError.message}`)
+      }
 
       if (tags.length > 0) {
         const tagIds = await Promise.all(
           tags.map(async (tagName: string) => {
             const tagSlug = slugify(tagName)
-            let { data: tag } = await supabase
+            let { data: tag, error: tagError } = await supabase
               .from('blog_tags')
               .select('id')
               .eq('slug', tagSlug)
-              .single()
+              .maybeSingle()
+
+            if (tagError) {
+              throw new Error(`Failed to fetch tag: ${tagError.message}`)
+            }
 
             if (!tag) {
-              const { data: newTag } = await supabase
+              const { data: newTag, error: insertError } = await supabase
                 .from('blog_tags')
                 .insert({ name: tagName, slug: tagSlug })
                 .select()
                 .single()
+              
+              if (insertError) {
+                throw new Error(`Failed to create tag: ${insertError.message}`)
+              }
               tag = newTag
             }
 
@@ -195,7 +222,7 @@ export async function PUT(
           })
         )
 
-        await supabase
+        const { error: insertTagsError } = await supabase
           .from('blog_post_tags')
           .insert(
             tagIds.filter(Boolean).map(tagId => ({
@@ -203,6 +230,10 @@ export async function PUT(
               tag_id: tagId
             }))
           )
+
+        if (insertTagsError) {
+          throw new Error(`Failed to insert tags: ${insertTagsError.message}`)
+        }
       }
     }
 

@@ -16,18 +16,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     notFound()
   }
 
-  const { data: categoryData } = await supabase
-    .from('blog_categories')
-    .select('id')
-    .eq('slug', slug)
-    .single()
-
   let posts: any[] = []
-  if (categoryData) {
-    const { data: postCategories } = await supabase
-      .from('blog_post_categories')
-      .select('post_id')
-      .eq('category_id', categoryData.id)
+  const { data: postCategories } = await supabase
+    .from('blog_post_categories')
+    .select('post_id')
+    .eq('category_id', category.id)
 
     if (postCategories && postCategories.length > 0) {
       const postIds = postCategories.map(pc => pc.post_id)

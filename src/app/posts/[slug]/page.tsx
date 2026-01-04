@@ -7,8 +7,12 @@ import { CommentForm } from '@/components/blog/CommentForm'
 import { CommentList } from '@/components/blog/CommentList'
 import { RelatedPosts } from '@/components/blog/RelatedPosts'
 import { StructuredData } from '@/components/blog/StructuredData'
+import { SocialShare } from '@/components/blog/SocialShare'
 import { formatDate } from '@/lib/utils'
 import type { Metadata } from 'next'
+
+// Enable ISR - revalidate every hour
+export const revalidate = 3600
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const supabase = await createServerSupabaseClient()
@@ -161,12 +165,21 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           )}
 
           {/* Rating */}
-          <div className="mb-8">
+          <div className="mb-4">
             <RatingWidget
               postId={post.id}
               averageRating={averageRating}
               ratingCount={ratingCount}
               userRating={userRating}
+            />
+          </div>
+
+          {/* Social Share */}
+          <div className="mb-8">
+            <SocialShare
+              url={`/posts/${post.slug}`}
+              title={post.title}
+              description={post.excerpt || undefined}
             />
           </div>
         </header>

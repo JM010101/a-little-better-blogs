@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { BlogPost } from '@/types/blog'
+import { ImageUpload } from './ImageUpload'
+import { ImageIcon } from 'lucide-react'
 
 interface PostEditorProps {
   post?: BlogPost
@@ -25,6 +27,7 @@ export function PostEditor({ post }: PostEditorProps) {
   const [categoryInput, setCategoryInput] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showImageUpload, setShowImageUpload] = useState(false)
 
   const handleAddCategory = () => {
     if (categoryInput.trim() && !categories.includes(categoryInput.trim())) {
@@ -123,9 +126,45 @@ export function PostEditor({ post }: PostEditorProps) {
       </div>
 
       <div>
-        <label htmlFor="content" className="block text-sm font-semibold mb-2">
-          Content * (Markdown supported)
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="content" className="block text-sm font-semibold">
+            Content * (Markdown supported)
+          </label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowImageUpload(!showImageUpload)}
+            className="flex items-center gap-2"
+          >
+            <ImageIcon className="w-4 h-4" />
+            {showImageUpload ? 'Hide' : 'Insert Image'}
+          </Button>
+        </div>
+        
+        {showImageUpload && (
+          <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+            <ImageUpload
+              onUploadComplete={(url) => {
+                const textarea = document.getElementById('content') as HTMLTextAreaElement
+                if (textarea) {
+                  const cursorPos = textarea.selectionStart
+                  const textBefore = content.substring(0, cursorPos)
+                  const textAfter = content.substring(cursorPos)
+                  const imageMarkdown = `![Image](${url})\n`
+                  setContent(textBefore + imageMarkdown + textAfter)
+                  setShowImageUpload(false)
+                  // Set cursor position after inserted text
+                  setTimeout(() => {
+                    textarea.focus()
+                    textarea.setSelectionRange(cursorPos + imageMarkdown.length, cursorPos + imageMarkdown.length)
+                  }, 0)
+                }
+              }}
+            />
+          </div>
+        )}
+        
         <textarea
           id="content"
           value={content}
