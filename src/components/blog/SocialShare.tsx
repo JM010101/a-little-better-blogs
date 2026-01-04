@@ -1,7 +1,7 @@
 'use client'
 
 import { Twitter, Facebook, Linkedin, Link as LinkIcon, Share2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface SocialShareProps {
   url: string
@@ -11,6 +11,16 @@ interface SocialShareProps {
 
 export function SocialShare({ url, title, description }: SocialShareProps) {
   const [copied, setCopied] = useState(false)
+  const [canShare, setCanShare] = useState(false)
+
+  useEffect(() => {
+    setCanShare(
+      typeof window !== 'undefined' &&
+      typeof navigator !== 'undefined' &&
+      'share' in navigator &&
+      typeof navigator.share === 'function'
+    )
+  }, [])
 
   const shareUrl = typeof window !== 'undefined' ? window.location.origin + url : url
   const encodedUrl = encodeURIComponent(shareUrl)
@@ -90,7 +100,7 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
         <LinkIcon className="w-5 h-5" />
       </button>
 
-      {navigator.share && (
+      {canShare && (
         <button
           onClick={handleShare}
           className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
