@@ -41,11 +41,13 @@ function checkRateLimit(key: string): boolean {
 // Clean up old entries periodically
 setInterval(() => {
   const now = Date.now()
-  for (const [key, record] of rateLimitMap.entries()) {
+  const keysToDelete: string[] = []
+  rateLimitMap.forEach((record, key) => {
     if (now > record.resetTime) {
-      rateLimitMap.delete(key)
+      keysToDelete.push(key)
     }
-  }
+  })
+  keysToDelete.forEach(key => rateLimitMap.delete(key))
 }, RATE_LIMIT.windowMs)
 
 export function middleware(request: NextRequest) {
