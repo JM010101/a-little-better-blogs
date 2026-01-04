@@ -162,10 +162,26 @@ DROP POLICY IF EXISTS "Public can read categories" ON blog_categories;
 CREATE POLICY "Public can read categories" ON blog_categories
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can create categories" ON blog_categories;
+CREATE POLICY "Authenticated users can create categories" ON blog_categories
+    FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can update categories" ON blog_categories;
+CREATE POLICY "Authenticated users can update categories" ON blog_categories
+    FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
 -- RLS Policies for blog_tags
 DROP POLICY IF EXISTS "Public can read tags" ON blog_tags;
 CREATE POLICY "Public can read tags" ON blog_tags
     FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can create tags" ON blog_tags;
+CREATE POLICY "Authenticated users can create tags" ON blog_tags
+    FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can update tags" ON blog_tags;
+CREATE POLICY "Authenticated users can update tags" ON blog_tags
+    FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 
 -- RLS Policies for blog_post_categories
 DROP POLICY IF EXISTS "Public can read post categories" ON blog_post_categories;
