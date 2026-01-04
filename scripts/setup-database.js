@@ -145,6 +145,10 @@ DROP POLICY IF EXISTS "Public can read published posts" ON blog_posts;
 CREATE POLICY "Public can read published posts" ON blog_posts
     FOR SELECT USING (published = true);
 
+DROP POLICY IF EXISTS "Authors can read their own posts" ON blog_posts;
+CREATE POLICY "Authors can read their own posts" ON blog_posts
+    FOR SELECT TO authenticated USING (author_id = auth.uid());
+
 DROP POLICY IF EXISTS "Authenticated users can create posts" ON blog_posts;
 CREATE POLICY "Authenticated users can create posts" ON blog_posts
     FOR INSERT WITH CHECK (auth.role() = 'authenticated');

@@ -51,7 +51,11 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   
   // Get current user to check if they're the author
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError) {
+    console.error('Error getting user:', userError)
+  }
   
   // Fetch post without published filter first
   const { data: post, error } = await supabase
@@ -65,13 +69,29 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     .eq('slug', slug)
     .single()
 
-  if (error || !post) {
+  if (error) {
+    console.error('Error fetching post:', error)
+    console.error('Slug:', slug)
+    console.error('User:', user?.id)
+    console.error('Error code:', error.code)
+    console.error('Error message:', error.message)
+    notFound()
+  }
+
+  if (!post) {
+    console.error('Post not found for slug:', slug)
     notFound()
   }
   
   // If post is unpublished, only allow the author to view it
   if (!post.published) {
     if (!user || post.author_id !== user.id) {
+      console.error('Unauthorized access attempt:', {
+        postPublished: post.published,
+        userId: user?.id,
+        authorId: post.author_id,
+        slug
+      })
       notFound()
     }
   }
