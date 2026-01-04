@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
+      if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('not found')) {
+        throw new Error('Storage bucket "blog-images" not found. Please create it in your Supabase dashboard under Storage.')
+      }
       throw new Error(`Failed to upload file: ${uploadError.message}`)
     }
 
