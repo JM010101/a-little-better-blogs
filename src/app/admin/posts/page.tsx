@@ -1,6 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { SearchParams } from 'next/navigation'
 import { FileText, Edit, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react'
 
 interface AdminPostsPageProps {
