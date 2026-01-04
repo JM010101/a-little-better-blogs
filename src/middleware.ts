@@ -75,10 +75,16 @@ export function middleware(request: NextRequest) {
   // Referrer-Policy
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin')
   
-  // Content-Security-Policy (basic)
+  // Content-Security-Policy (allows Google Analytics, Cloudflare, and other trusted sources)
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com; " +
+    "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://static.cloudflareinsights.com; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://*.supabase.co;"
   )
 
   return response
