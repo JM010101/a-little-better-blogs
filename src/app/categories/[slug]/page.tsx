@@ -22,22 +22,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     .select('post_id')
     .eq('category_id', category.id)
 
-    if (postCategories && postCategories.length > 0) {
-      const postIds = postCategories.map(pc => pc.post_id)
-      const { data: postsData } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          author:blog_authors(*),
-          categories:blog_post_categories(blog_categories(*)),
-          tags:blog_post_tags(blog_tags(*))
-        `)
-        .in('id', postIds)
-        .eq('published', true)
-        .order('published_at', { ascending: false })
-      
-      posts = postsData || []
-    }
+  if (postCategories && postCategories.length > 0) {
+    const postIds = postCategories.map(pc => pc.post_id)
+    const { data: postsData } = await supabase
+      .from('blog_posts')
+      .select(`
+        *,
+        author:blog_authors(*),
+        categories:blog_post_categories(blog_categories(*)),
+        tags:blog_post_tags(blog_tags(*))
+      `)
+      .in('id', postIds)
+      .eq('published', true)
+      .order('published_at', { ascending: false })
+    
+    posts = postsData || []
   }
 
   return (
