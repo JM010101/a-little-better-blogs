@@ -11,7 +11,10 @@ const RATE_LIMIT = {
 }
 
 function getRateLimitKey(request: NextRequest): string {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+  // Get IP from headers (x-forwarded-for contains the original IP when behind proxy)
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  const realIp = request.headers.get('x-real-ip')
+  const ip = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown'
   return `rate-limit:${ip}`
 }
 
