@@ -57,24 +57,19 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     console.error('Error getting user:', userError)
   }
   
-  // Fetch post without published filter first
-  const { data: post, error } = await supabase
+  // Fetch post first (without relations to avoid RLS issues)
+  const { data: post, error: postError } = await supabase
     .from('blog_posts')
-    .select(`
-      *,
-      author:blog_authors(*),
-      categories:blog_post_categories(blog_categories(*)),
-      tags:blog_post_tags(blog_tags(*))
-    `)
+    .select('*')
     .eq('slug', slug)
-    .single()
+    .maybeSingle()
 
-  if (error) {
-    console.error('Error fetching post:', error)
+  if (postError) {
+    console.error('Error fetching post:', postError)
     console.error('Slug:', slug)
     console.error('User:', user?.id)
-    console.error('Error code:', error.code)
-    console.error('Error message:', error.message)
+    console.error('Error code:', postError.code)
+    console.error('Error message:', postError.message)
     notFound()
   }
 
@@ -82,6 +77,28 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     console.error('Post not found for slug:', slug)
     notFound()
   }
+  
+  // Fetch relations separately (this avoids RLS issues with nested queries)
+  const [authorResult, categoriesResult, tagsResult] = await Promise.all([
+    supabase
+      .from('blog_authors')
+      .select('*')
+      .eq('user_id', post.author_id)
+      .maybeSingle(),
+    supabase
+      .from('blog_post_categories')
+      .select('blog_categories(*)')
+      .eq('post_id', post.id),
+    supabase
+      .from('blog_post_tags')
+      .select('blog_tags(*)')
+      .eq('post_id', post.id)
+  ])
+  
+  // Attach relations to post object
+  post.author = authorResult.data || null
+  post.categories = categoriesResult.data?.map((item: any) => item.blog_categories).filter(Boolean) || []
+  post.tags = tagsResult.data?.map((item: any) => item.blog_tags).filter(Boolean) || []
   
   // If post is unpublished, only allow the author to view it
   if (!post.published) {
