@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabaseClient } from '@/lib/supabase-client'
 import { Button } from '@/components/ui/button'
 
 export default function LoginPage() {
@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabaseClient.auth.signUp({
           email,
           password,
           options: {
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
         alert('Check your email to confirm your account!')
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabaseClient.auth.signInWithPassword({
           email,
           password,
         })
@@ -55,7 +55,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error: googleError } = await supabase.auth.signInWithOAuth({
+      const { error: googleError } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,

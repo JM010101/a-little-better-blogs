@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabaseClient } from '@/lib/supabase-client'
 
 export function AuthButton() {
   const router = useRouter()
@@ -12,7 +12,7 @@ export function AuthButton() {
 
   useEffect(() => {
     // Check current user
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabaseClient.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       setLoading(false)
     })
@@ -20,7 +20,7 @@ export function AuthButton() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
 
