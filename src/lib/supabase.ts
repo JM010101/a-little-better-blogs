@@ -10,7 +10,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies()
   
-  return createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -22,7 +22,7 @@ export async function createServerSupabaseClient() {
           try {
             cookieStore.set({ name, value, ...options })
           } catch (error) {
-            // Handle error
+            // Handle error - cookies can only be set in Server Components, Server Actions, or Route Handlers
           }
         },
         remove(name: string, options: any) {
@@ -35,4 +35,9 @@ export async function createServerSupabaseClient() {
       },
     }
   )
+
+  // Refresh the session to ensure we have the latest auth state
+  await supabase.auth.getSession()
+  
+  return supabase
 }

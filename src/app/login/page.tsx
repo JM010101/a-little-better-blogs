@@ -40,8 +40,8 @@ export default function LoginPage() {
 
         if (signInError) throw signInError
 
-        router.push('/')
-        router.refresh()
+        // Use window.location for full page reload to ensure cookies are synced
+        window.location.href = '/'
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')

@@ -4,7 +4,10 @@ import { PostEditor } from '@/components/blog/PostEditor'
 
 export default async function CreatePostPage() {
   const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Get user from session (more reliable for SSR)
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   if (!user) {
     redirect('/login')
