@@ -18,14 +18,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const supabase = await createServerSupabaseClient()
   const { slug } = await params
   
+  // Get current user to check if they're the author
+  const { data: { user } } = await supabase.auth.getUser()
+  
   const { data: post } = await supabase
     .from('blog_posts')
     .select('*')
     .eq('slug', slug)
-    .eq('published', true)
     .single()
 
-  if (!post) {
+  // If post doesn't exist, or is unpublished and user is not the author, return empty metadata
+  if (!post || (!post.published && post.author_id !== user?.id)) {
     return {}
   }
 
@@ -47,6 +50,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const supabase = await createServerSupabaseClient()
   const { slug } = await params
   
+  // Get current user to check if they're the author
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Fetch post without published filter first
   const { data: post, error } = await supabase
     .from('blog_posts')
     .select(`
@@ -56,11 +63,17 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       tags:blog_post_tags(blog_tags(*))
     `)
     .eq('slug', slug)
-    .eq('published', true)
     .single()
 
   if (error || !post) {
     notFound()
+  }
+  
+  // If post is unpublished, only allow the author to view it
+  if (!post.published) {
+    if (!user || post.author_id !== user.id) {
+      notFound()
+    }
   }
 
   // Get ratings
@@ -92,6 +105,24 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     <article className="container-custom py-12">
       <StructuredData post={post} />
       <div className="max-w-4xl mx-auto">
+        {/* Draft Banner */}
+        {!post.published && (
+          <div className="mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold">This post is a draft</p>
+                <p className="text-sm">Only you can see this post. Publish it to make it visible to everyone.</p>
+              </div>
+              <Link
+                href={`/posts/${post.slug}/edit`}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                Edit Post
+              </Link>
+            </div>
+          </div>
+        )}
+        
         {/* Breadcrumb */}
         <nav className="mb-6 text-sm text-gray-600">
           <Link href="/" className="hover:text-primary-600">Home</Link>
