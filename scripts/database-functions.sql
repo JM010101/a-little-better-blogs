@@ -1,6 +1,6 @@
--- Database Functions for Enterprise Blog
 
--- Function to atomically increment post views
+
+
 CREATE OR REPLACE FUNCTION increment_post_views(post_id UUID)
 RETURNS INTEGER AS $$
 DECLARE
@@ -15,7 +15,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to get post statistics
+
 CREATE OR REPLACE FUNCTION get_post_stats(post_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -47,7 +47,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to search posts with full-text search
+
 CREATE OR REPLACE FUNCTION search_posts_fulltext(search_query TEXT, result_limit INT DEFAULT 20)
 RETURNS TABLE (
   id UUID,
@@ -84,7 +84,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to get related posts
+
 CREATE OR REPLACE FUNCTION get_related_posts(post_id UUID, result_limit INT DEFAULT 3)
 RETURNS TABLE (
   id UUID,
@@ -98,7 +98,7 @@ DECLARE
   post_categories UUID[];
   post_tags UUID[];
 BEGIN
-  -- Get categories and tags for the post
+  
   SELECT ARRAY_AGG(category_id) INTO post_categories
   FROM blog_post_categories
   WHERE post_id = get_related_posts.post_id;
@@ -131,7 +131,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant execute permissions
+
 GRANT EXECUTE ON FUNCTION increment_post_views(UUID) TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION get_post_stats(UUID) TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION search_posts_fulltext(TEXT, INT) TO authenticated, anon;

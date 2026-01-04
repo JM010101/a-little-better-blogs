@@ -22,22 +22,21 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
     .select('post_id')
     .eq('tag_id', tag.id)
 
-    if (postTags && postTags.length > 0) {
-      const postIds = postTags.map(pt => pt.post_id)
-      const { data: postsData } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          author:blog_authors(*),
-          categories:blog_post_categories(blog_categories(*)),
-          tags:blog_post_tags(blog_tags(*))
-        `)
-        .in('id', postIds)
-        .eq('published', true)
-        .order('published_at', { ascending: false })
-      
-      posts = postsData || []
-    }
+  if (postTags && postTags.length > 0) {
+    const postIds = postTags.map(pt => pt.post_id)
+    const { data: postsData } = await supabase
+      .from('blog_posts')
+      .select(`
+        *,
+        author:blog_authors(*),
+        categories:blog_post_categories(blog_categories(*)),
+        tags:blog_post_tags(blog_tags(*))
+      `)
+      .in('id', postIds)
+      .eq('published', true)
+      .order('published_at', { ascending: false })
+    
+    posts = postsData || []
   }
 
   return (
