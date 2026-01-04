@@ -120,12 +120,12 @@ export async function GET(request: NextRequest) {
     if (error) throw error
 
     // Get ratings for posts
-    const postIds = data?.map(p => p.id) || []
-    if (postIds.length > 0) {
+    const fetchedPostIds = data?.map(p => p.id) || []
+    if (fetchedPostIds.length > 0) {
       const { data: ratings } = await supabase
         .from('blog_ratings')
         .select('post_id, rating')
-        .in('post_id', postIds)
+        .in('post_id', fetchedPostIds)
 
       const ratingsMap = new Map<string, { sum: number; count: number }>()
       ratings?.forEach(r => {
