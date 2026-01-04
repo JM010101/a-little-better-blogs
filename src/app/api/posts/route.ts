@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, content, excerpt, categories, tags, featured, published } = body
+    const { title, content, excerpt, categories, tags, featured, published, thumbnail_url } = body
 
     if (!title || !content) {
       return NextResponse.json(
@@ -213,13 +213,22 @@ export async function POST(request: NextRequest) {
       published_at: published ? new Date().toISOString() : null,
     }
 
+    // Add thumbnail_url if provided (only if column exists in database)
+    // Note: If you get an error about unknown column, run the migration script
+    if (thumbnail_url && thumbnail_url.trim()) {
+      postData.thumbnail_url = thumbnail_url.trim()
+    }
+
     const { data: post, error: postError } = await supabase
       .from('blog_posts')
       .insert(postData)
       .select()
       .single()
 
-    if (postError) throw postError
+    if (postError) {
+      console.error('Post creation error:', postError)
+      throw new Error(`Failed to create post: ${postError.message}`)
+    }
 
     // Handle categories
     if (categories && categories.length > 0) {
@@ -317,8 +326,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ post }, { status: 201 })
   } catch (error: any) {
+    console.error('POST /api/posts error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { 
+        error: error.message || 'Failed to create post',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }

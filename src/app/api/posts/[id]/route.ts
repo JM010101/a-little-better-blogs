@@ -92,7 +92,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, content, excerpt, categories, tags, featured, published } = body
+    const { title, content, excerpt, categories, tags, featured, published, thumbnail_url } = body
 
     const updateData: any = {
       updated_at: new Date().toISOString(),
@@ -110,6 +110,9 @@ export async function PUT(
       if (published && !existingPost.published_at) {
         updateData.published_at = new Date().toISOString()
       }
+    }
+    if (thumbnail_url !== undefined) {
+      updateData.thumbnail_url = thumbnail_url || null
     }
 
     const { data: post, error } = await supabase
@@ -239,8 +242,12 @@ export async function PUT(
 
     return NextResponse.json({ post })
   } catch (error: any) {
+    console.error('PUT /api/posts/[id] error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { 
+        error: error.message || 'Failed to update post',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }
