@@ -90,15 +90,6 @@ export default async function HomePage() {
 
   return (
     <div className="container-custom py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold text-gray-900 mb-4">
-          Welcome to A Little Better Blog
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Discover insights, share knowledge, and join conversations about continuous improvement.
-        </p>
-      </div>
-
       {featuredPosts && featuredPosts.length > 0 && (
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8">Featured Posts</h2>
