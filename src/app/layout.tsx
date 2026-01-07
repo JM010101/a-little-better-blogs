@@ -59,12 +59,6 @@ export default function RootLayout({
                   />
                 </Link>
                 <div className="flex items-center gap-4">
-                  <Link href="/posts" className="text-gray-700 hover:text-primary-600 transition-colors">
-                    Posts
-                  </Link>
-                  <Link href="/categories" className="text-gray-700 hover:text-primary-600 transition-colors">
-                    Categories
-                  </Link>
                   <HeaderSearch />
                   <Link href="/create" className="btn-primary">
                     Write Post
