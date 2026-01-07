@@ -47,17 +47,15 @@ export default function RootLayout({
           <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
             <nav className="container-custom py-4">
               <div className="flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <Link href="/" className="hover:opacity-80 transition-opacity">
                   <Image
                     src="/src/blog-logo.png"
-                    alt="A Little Better Blog Logo"
-                    width={40}
-                    height={40}
-                    className="object-contain"
+                    alt="A Little Better Blog"
+                    width={120}
+                    height={60}
+                    className="object-contain h-auto"
+                    priority
                   />
-                  <span className="text-2xl font-bold text-primary-600">
-                    A Little Better Blog
-                  </span>
                 </Link>
                 <div className="flex items-center gap-6">
                   <Link href="/posts" className="text-gray-700 hover:text-primary-600 transition-colors">
