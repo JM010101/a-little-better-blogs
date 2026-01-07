@@ -5,7 +5,7 @@ import { PostCard } from '@/components/blog/PostCard'
 async function fetchPostsWithRelations(posts: any[], supabase: any) {
   if (!posts || posts.length === 0) return []
   
-  const authorIds = [...new Set(posts.map(p => p.author_id).filter(Boolean))]
+  const authorIds = Array.from(new Set(posts.map(p => p.author_id).filter(Boolean)))
   const postIds = posts.map(p => p.id)
   
   // Fetch all relations in parallel
