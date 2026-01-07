@@ -33,6 +33,13 @@ export function ImageUpload({
       return
     }
 
+    // Show local preview immediately
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+
     setUploading(true)
 
     try {
@@ -50,6 +57,7 @@ export function ImageUpload({
       }
 
       const data = await response.json()
+      // Replace local preview with uploaded URL
       setPreview(data.url)
       
       if (onUploadComplete) {
@@ -58,6 +66,8 @@ export function ImageUpload({
     } catch (error: any) {
       console.error('Upload error:', error)
       alert(error.message || 'Failed to upload image')
+      // Remove preview on error
+      setPreview(null)
     } finally {
       setUploading(false)
     }
@@ -113,19 +123,40 @@ export function ImageUpload({
   if (preview) {
     return (
       <div className={`relative ${className}`}>
-        <img
-          src={preview}
-          alt="Upload preview"
-          className="w-full h-48 object-cover rounded-lg border border-gray-300"
-        />
-        <button
-          type="button"
-          onClick={handleRemove}
-          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
-          aria-label="Remove image"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="relative w-full">
+          <img
+            src={preview}
+            alt="Upload preview"
+            className="w-full h-64 object-contain rounded-lg border border-gray-300 bg-gray-50"
+            onError={(e) => {
+              console.error('Image failed to load:', preview)
+              e.currentTarget.src = '/placeholder-image.png'
+            }}
+          />
+          {uploading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                <p className="text-white text-sm">Uploading...</p>
+              </div>
+            </div>
+          )}
+          {!uploading && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+              aria-label="Remove image"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {!uploading && (
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Image uploaded successfully. Click X to remove.
+          </p>
+        )}
       </div>
     )
   }
