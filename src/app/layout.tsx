@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { AuthButton } from '@/components/AuthButton'
+import { HeaderSearch } from '@/components/blog/HeaderSearch'
 import './globals.css'
 
 const inter = Inter({ 
@@ -57,16 +58,14 @@ export default function RootLayout({
                     priority
                   />
                 </Link>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
                   <Link href="/posts" className="text-gray-700 hover:text-primary-600 transition-colors">
                     Posts
                   </Link>
                   <Link href="/categories" className="text-gray-700 hover:text-primary-600 transition-colors">
                     Categories
                   </Link>
-                  <Link href="/search" className="text-gray-700 hover:text-primary-600 transition-colors">
-                    Search
-                  </Link>
+                  <HeaderSearch />
                   <Link href="/create" className="btn-primary">
                     Write Post
                   </Link>

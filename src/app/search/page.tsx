@@ -6,22 +6,74 @@ interface SearchPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
+async function fetchPostsWithRelations(posts: any[], supabase: any) {
+  if (!posts || posts.length === 0) return []
+  
+  const authorIds = Array.from(new Set(posts.map(p => p.author_id).filter(Boolean)))
+  const postIds = posts.map(p => p.id)
+  
+  const [authorsResult, categoriesResult, tagsResult] = await Promise.all([
+    authorIds.length > 0
+      ? supabase.from('blog_authors').select('*').in('user_id', authorIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from('blog_post_categories')
+      .select('post_id, blog_categories(*)')
+      .in('post_id', postIds),
+    supabase
+      .from('blog_post_tags')
+      .select('post_id, blog_tags(*)')
+      .in('post_id', postIds)
+  ])
+  
+  const authorsMap = new Map()
+  authorsResult.data?.forEach((author: any) => {
+    authorsMap.set(author.user_id, author)
+  })
+  
+  const categoriesMap = new Map()
+  categoriesResult.data?.forEach((item: any) => {
+    if (!categoriesMap.has(item.post_id)) {
+      categoriesMap.set(item.post_id, [])
+    }
+    if (item.blog_categories) {
+      categoriesMap.get(item.post_id).push(item.blog_categories)
+    }
+  })
+  
+  const tagsMap = new Map()
+  tagsResult.data?.forEach((item: any) => {
+    if (!tagsMap.has(item.post_id)) {
+      tagsMap.set(item.post_id, [])
+    }
+    if (item.blog_tags) {
+      tagsMap.get(item.post_id).push(item.blog_tags)
+    }
+  })
+  
+  return posts.map(post => ({
+    ...post,
+    author: authorsMap.get(post.author_id) || null,
+    categories: categoriesMap.get(post.id) || [],
+    tags: tagsMap.get(post.id) || []
+  }))
+}
+
 async function SearchResults({ query }: { query: string }) {
   const { createServerSupabaseClient } = await import('@/lib/supabase')
   const supabase = await createServerSupabaseClient()
   
-  const { data: posts } = await supabase
+  // Fetch posts without relations first
+  const { data: postsData } = await supabase
     .from('blog_posts')
-    .select(`
-      *,
-      author:blog_authors(*),
-      categories:blog_post_categories(blog_categories(*)),
-      tags:blog_post_tags(blog_tags(*))
-    `)
+    .select('*')
     .eq('published', true)
     .or(`title.ilike.%${query}%,content.ilike.%${query}%,excerpt.ilike.%${query}%`)
     .order('published_at', { ascending: false })
     .limit(20)
+
+  // Fetch relations
+  const posts = await fetchPostsWithRelations(postsData || [], supabase)
 
   return (
     <>
